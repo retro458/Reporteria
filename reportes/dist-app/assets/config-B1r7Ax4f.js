@@ -1,0 +1,1 @@
+import{y as o,u as s}from"./index-Bpj3mhq0.js";const r=o.create({baseURL:"https://api.cloudpocket.online"});r.interceptors.request.use(e=>{const t=s();return t.token&&(e.headers.Authorization=`Bearer ${t.token}`),e},e=>Promise.reject(e));r.interceptors.response.use(e=>e,e=>(e.response&&e.response.status===401&&s().setExpired(!0),Promise.reject(e)));export{r as a};

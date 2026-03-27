@@ -1,0 +1,21 @@
+# --- FRONTEND (Vue/Vite) ---
+**/node_modules/
+**/dist/
+**/.env
+**/.env.*.local
+**/.env.app 
+
+# --- BACKEND (C# / .NET) ---
+**/bin/
+**/obj/
+**/appsettings.json
+**/appsettings.Development.json
+**/.vs/
+**/.vscode/
+**/out
+**/half
+**/dist
+**/deploy.ps1
+# --- GENERAL ---
+.DS_Store
+*.log
