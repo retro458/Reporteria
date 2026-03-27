@@ -1,0 +1,26 @@
+
+{
+    
+    "Logging": {
+      "LogLevel": {
+        "Default": "Information",
+        "Microsoft.AspNetCore": "Warning"
+      }
+    },
+    "ConnectionStrings": {
+      "AdminDb": "Server=IP_SERVIDOR;Database=NOMBRE_DB;User Id=USUARIO;Password=CONTRASEÑA;TrustServerCertificate=true;",
+      "ControlDTE": "Server=IP_SERVIDOR;Database=NOMBRE_DB;User Id=USUARIO;Password=CONTRASEÑA;TrustServerCertificate=true;"
+    },
+    "Jwt": {
+      "Key": "UNA_LLAVE_SECRETA_MUY_LARGA_DE_AL_MENOS_32_CARACTERES",
+      "Issuer": "CloudPocketAPI",
+      "Audience": "CloudPocketApp"
+    },
+
+    "_comment": {
+        "Nota": "Reemplaza IP_SERVIDOR, NOMBRE_DB, USUARIO y CONTRASEÑA con los valores correspondientes a tu base de datos."
+    },
+    "AllowedHosts": "*" 
+  }
+
+  
