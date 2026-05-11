@@ -27,73 +27,79 @@
     </div>
 
     <!-- Filtros -->
-    <div class="filtros-card">
-      <div class="filtros-grid">
+   <div class="filtros-grid">
 
-        <div class="filtro-group">
-          <label>Producto</label>
-          <div class="search-wrap">
-            <input
-              v-model="busquedaProducto"
-              type="text"
-              placeholder="Buscar por código o nombre..."
-              @input="buscarProductos"
-              @focus="showDropdown = true"
-              autocomplete="off"
-            />
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <!-- Dropdown resultados -->
-            <div 
-             v-if="showDropdown && productosEncontrados.length > 0" 
-             class="dropdown-productos"
-             @mouseenter="cancelClose"
-             @mouseleave="handleClickOutside"
-             >
-            <div
-             v-for="p in productosEncontrados"
-             :key="p.codigo"
-             class="dropdown-item"
-             @mousedown="seleccionarProducto(p)"
-             >
-             <span class="prod-code">{{ p.codigo }}</span>
-             <span class="prod-name">{{ p.nombre }}</span>
-              </div>
-             </div>
-          </div>
-          <!-- Producto seleccionado -->
-          <div v-if="productoSeleccionado" class="prod-badge">
-            <span>{{ productoSeleccionado.codigo }} — {{ productoSeleccionado.nombre }}</span>
-            <button @click="limpiarProducto">×</button>
-          </div>
+      <div class="filtro-group">
+      <label>Producto</label>
+      <div class="search-wrap">
+      <input
+        v-model="busquedaProducto"
+        type="text"
+        placeholder="Buscar por código o nombre..."
+        @input="buscarProductos"
+        @focus="showDropdown = true"
+        autocomplete="off"
+       />
+       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <div v-if="showDropdown && productosEncontrados.length > 0" class="dropdown-productos">
+          <div v-for="p in productosEncontrados" :key="p.codigo" class="dropdown-item" @mousedown="seleccionarProducto(p)">
+          <span class="prod-code">{{ p.codigo }}</span>
+          <span class="prod-name">{{ p.nombre }}</span>
+         </div>
         </div>
-
-        <div class="filtro-group">
-          <label>Desde</label>
-          <input type="date" v-model="filtros.desde" />
-        </div>
-
-        <div class="filtro-group">
-          <label>Hasta</label>
-          <input type="date" v-model="filtros.hasta" />
-        </div>
-
-        <div class="filtro-group filtro-action">
-          <button class="btn-buscar" @click="buscarKardex" :disabled="cargando || !productoSeleccionado">
-            <svg v-if="!cargando" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M12 2a10 10 0 0 1 10 10"/>
-            </svg>
-            {{ cargando ? 'Buscando...' : 'Buscar' }}
-          </button>
-        </div>
-
+     </div>
+     <div v-if="productoSeleccionado" class="prod-badge">
+      <span>{{ productoSeleccionado.codigo }} — {{ productoSeleccionado.nombre }}</span>
+      <button @click="limpiarProducto">×</button>
       </div>
     </div>
 
+   <div class="filtro-group">
+    <label>Documento</label>
+    <select v-model="filtros.tipoDocumento" class="custom-select">
+      <option value="TODOS">TODOS</option>
+      <option value="FACTURA">FACTURA</option>
+      <option value="CREDITO">CRÉDITO FISCAL</option>
+     </select>
+    </div>
+
+    <div class="filtro-group">
+    <label>Correlativo</label>
+    <input v-model="filtros.correlativo" type="text" placeholder="Ej: 1292..." />
+    </div>
+
+   <div class="filtro-group">
+    <label>Desde</label>
+    <input type="date" v-model="filtros.desde" />
+    </div>
+
+    <div class="filtro-group">
+    <label>Hasta</label>
+    <input type="date" v-model="filtros.hasta" />
+    </div>
+
+    <div class="filtro-group filtro-action">
+    <div class="action-buttons-wrap">
+     <button class="btn-clear" @click="resetearFiltros" :disabled="cargando">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+       </svg>
+     </button>
+
+    <button class="btn-buscar" @click="buscarKardex" :disabled="cargando || !productoSeleccionado">
+      <svg v-if="!cargando" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 2a10 10 0 0 1 10 10"/>
+      </svg>
+      {{ cargando ? '' : 'Buscar' }}
+      </button>
+       </div>
+      </div>
+    </div>
     <!-- KPIs -->
     <div v-if="hayDatos" class="kpis-row">
       <div class="kpi-card entradas">
@@ -162,7 +168,7 @@
               <td></td>
             </tr>
             <tr
-              v-for="(row, i) in kardexData"
+              v-for="(row, i) in kardexFiltrado"
               :key="i"
               :class="{ 'row-entrada': row.entrada > 0, 'row-salida': row.salida > 0 }"
             >
@@ -213,6 +219,7 @@
   </div>
 </template>
 
+<!-- Estado y lógica del componente -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
@@ -233,12 +240,47 @@ const empresaNombre = ref(auth.empresa || 'CloudPocket')
 const saldoInicialReal = ref(0)
 const filtros = ref({
   desde: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
-  hasta: new Date().toISOString().split('T')[0]
+  hasta: new Date().toISOString().split('T')[0],
+  tipoDocumento: 'TODOS', 
+  correlativo: ''        
 })
 
 // Computed
+
+const resetearFiltros = () => {
+  filtros.value = {
+    desde: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
+    hasta: new Date().toISOString().split('T')[0],
+    tipoDocumento: 'TODOS',
+    correlativo: ''
+  }
+  
+  // kardexData.value = []
+}
 const hayDatos = computed(() => kardexData.value.length > 0)
 
+const kardexFiltrado = computed(() => {
+  if (!kardexData.value.length) return [];
+  
+  // Función para quitar tildes
+  const cleanText = (text: string) => 
+    text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+  return kardexData.value.filter(row => {
+    const docData = cleanText(row.documento);
+    const filtroDoc = filtros.value.tipoDocumento; // valores 'FACTURA', 'CREDITO', 'TODOS'
+
+    let matchDoc = false;
+    if (filtroDoc === 'TODOS') matchDoc = true;
+    else if (filtroDoc === 'FACTURA') matchDoc = docData.includes('FACTURA');
+    else if (filtroDoc === 'CREDITO') matchDoc = docData.includes('CREDITO') || docData.includes('FISCAL');
+
+    const matchCorr = filtros.value.correlativo === '' || 
+                      row.correlativo.toString().toUpperCase().includes(filtros.value.correlativo.toUpperCase());
+
+    return matchDoc && matchCorr;
+  });
+});
 const resumen = computed(() => {
   let totalEntradas = 0
   let totalSalidas = 0
@@ -261,13 +303,14 @@ const resumen = computed(() => {
     totalSalidas,
     saldoFinal: runningSaldo,
     saldoInicial: saldoInicialReal.value,
-    totalMovimientos: kardexData.value.length
+    //totalMovimientos: kardexData.value.length,
+    totalMovimientos: kardexFiltrado.value.length
   }
 })
 
 // Métodos
 const buscarProductos = async () => {
-  if (busquedaProducto.value.length < 2) {
+  if (busquedaProducto.value.length < 1) {
     productosEncontrados.value = []
     return
   }
@@ -446,10 +489,25 @@ onMounted(async () => {
 }
 .filtros-grid {
   display: grid;
-  grid-template-columns: 1fr 160px 160px auto;
+  /* 1.5fr: Producto (el más ancho)
+     1fr:   Tipo Documento
+     minmax(100px, 1fr): Correlativo
+     140px: Fecha Desde (tamaño fijo ideal para date picker)
+     140px: Fecha Hasta (tamaño fijo ideal para date picker)
+     auto:  Botones (se adapta al contenido)
+  */
+  grid-template-columns: 1.5fr 1fr minmax(100px, 1fr) 140px 140px auto;
   gap: 16px;
   align-items: end;
 }
+/* Responsivo para Tablets/Laptops pequeñas */
+@media (max-width: 1200px) {
+  .filtros-grid {
+    grid-template-columns: 1.5fr 1fr 1fr; /* Se vuelve de 3 columnas */
+    grid-template-rows: auto auto; /* En dos filas */
+  }
+}
+
 .filtro-group { display: flex; flex-direction: column; gap: 6px; }
 .filtro-group label { font-size: 11px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; }
 .filtro-group input[type="text"],
@@ -553,8 +611,18 @@ onMounted(async () => {
 .tabla-header h3 { font-size: 14px; font-weight: 600; color: #1d1d1f; margin: 0; }
 .tabla-count { font-size: 12px; color: #86868b; background: #f5f5f7; padding: 3px 10px; border-radius: 20px; }
 
-.tabla-scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tabla-scroll {
+  overflow-x: auto;
+  width: 100%;
+  display: block; /* Fuerza el comportamiento de bloque para el scroll */
+}
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  font-size: 13px; 
+  min-width: 1200px; /* Aumentamos de 1100 a 1200 para dar espacio a los DTE */
+  table-layout: fixed; 
+}
 thead tr { background: #f5f5f7; }
 th {
   padding: 10px 14px; text-align: left;
@@ -563,12 +631,31 @@ th {
   border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 th.num { text-align: right; }
-td { padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.04); color: #1d1d1f; }
+td { 
+  padding: 12px 14px; 
+  white-space: nowrap; 
+}
+th:nth-child(1), td:nth-child(1) { width: 90px; }  /* Fecha */
+th:nth-child(2), td:nth-child(2) { width: 160px; } /* Documento */
+th:nth-child(3), td:nth-child(3) { width: 140px; } /* Correlativo (Ampliado para DTE) */
+th:nth-child(4), td:nth-child(4) { width: 280px; } /* Cliente/Proveedor (Ancho fijo base) */
+th.num, td.num { width: 100px; }                  /* Columnas numéricas */
+
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
 td.fecha { color: #86868b; font-size: 12px; white-space: nowrap; }
 td.doc { font-size: 12px; color: #555; }
-td.corr { font-size: 12px; font-weight: 600; }
-td.cliente { font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.corr { 
+  font-size: 11px; /* Bajamos un punto el tamaño para correlativos largos */
+  font-weight: 600;
+  word-break: break-all; /* Si es un DTE larguísimo, permite que baje de línea o se ajuste */
+}
+td.cliente { 
+  font-size: 12px; 
+  max-width: 280px; 
+  overflow: hidden; 
+  text-overflow: ellipsis; /* Esto pone los "..." si el nombre es muy largo */
+  white-space: nowrap; 
+}
 
 .saldo-col { font-weight: 600; }
 .entrada-val { color: #2e7d32; font-weight: 600; }
@@ -602,5 +689,55 @@ tfoot .fila-totales td {
   .filtros-grid { grid-template-columns: 1fr; }
   .kpis-row { grid-template-columns: repeat(2, 1fr); }
   .header-actions { display: none; }
+}
+/*Estilo para filtrar por tipo de documento*/
+.custom-select {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: rgba(0,0,0,0.03);
+  font-size: 13px; color: #1d1d1f;
+  outline: none; transition: all 0.15s;
+  cursor: pointer;
+}
+.custom-select:focus {
+  border-color: #0071e3;
+}
+
+@media (max-width: 1024px) {
+  .filtros-grid { 
+    grid-template-columns: repeat(2, 1fr); 
+  }
+}
+/*estilo para btn de limpiar*/ 
+.action-buttons-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: #86868b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-clear:hover {
+  background: #fce4ec; /* Un tono rojizo suave al pasar el mouse */
+  color: #c62828;
+  border-color: rgba(198, 40, 40, 0.1);
+}
+
+.btn-clear svg {
+  width: 18px;
+  height: 18px;
 }
 </style>

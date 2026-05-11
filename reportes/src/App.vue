@@ -11,7 +11,6 @@
           <RouterView />
         </main>
       </div>
-      
     </div>
 
     <div v-else class="h-screen w-full flex flex-col items-center justify-center bg-white">
@@ -19,30 +18,26 @@
       <p class="mt-4 text-sm text-gray-500 font-medium">Validando acceso...</p>
     </div>
     
-    <SessionExpiredModal ref="expiredModal" />
+    <SessionExpiredModal v-if="isExpired" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, provide } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth' // Importamos el store
+import { useAuthStore } from '@/stores/auth' 
 import { storeToRefs } from 'pinia'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import Topbar from '@/components/layout/Topbar.vue'
-import type { ComponentPublicInstance } from 'vue'
 import SessionExpiredModal from '@/components/modals/SessionExpiredModal.vue'
-const expiredModal = ref<InstanceType<typeof SessionExpiredModal> | null>(null)
+
 const route = useRoute()
-const auth = useAuthStore() // Instanciamos el store
-const { isAuthenticated } = storeToRefs(useAuthStore()) // Extraemos la propiedad reactiva
+const authStore = useAuthStore()
+
+// Extraemos las propiedades reactivas del state y los getters
+const { isExpired, isAuthenticated } = storeToRefs(authStore)
+
 const isPublicRoute = computed(() => {
-  // Si la ruta no existe o es pública, la tratamos como tal para que no bloquee el login
   return route.meta.public === true 
-})
-provide('showSessionExpired', () => {
-  if (expiredModal.value) {
-    expiredModal.value.show() // Llamamos al método show del modal para mostrarlo
-  }
 })
 </script>

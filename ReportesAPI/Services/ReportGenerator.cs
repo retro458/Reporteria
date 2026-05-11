@@ -24,6 +24,17 @@ namespace ReportesAPI.Services;
 
 public class ReportGeneratorService : IReportGeneratorService
 {
+
+    private readonly string _assetsPath;
+
+    public ReportGeneratorService(IWebHostEnvironment env)
+    {
+        // Esto siempre apunta a la raíz del proyecto/publicación
+        _assetsPath = Path.Combine(env.ContentRootPath, "assets");
+    }
+     private string LogoPath => Path.Combine(_assetsPath, "cluth.jpg");
+
+
     // ══════════════════════════════════════════════════════
     // EXCEL — KARDEX
     // ══════════════════════════════════════════════════════
@@ -33,9 +44,17 @@ public class ReportGeneratorService : IReportGeneratorService
         using var package = new ExcelPackage();
         var ws = package.Workbook.Worksheets.Add("Kardex");
 
+        var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "assets", "cluth.jpg");
+        if (File.Exists(logoPath))
+        {
+        var picture = ws.Drawings.AddPicture("Logo", logoPath);
+        picture.SetPosition(0, 5, 0, 5); // Fila 0, offset, Columna 0, offset
+        picture.SetSize(120, 120); 
+        }
+
         // Título
-        ws.Cells["A1"].Value = "KARDEX DE INVENTARIO";
-        ws.Cells["A1:H1"].Merge = true;
+        ws.Cells["C1"].Value = "KARDEX DE PRODUCTO";
+        ws.Cells["C1:I1"].Merge = true;
         ws.Cells["A1"].Style.Font.Bold = true;
         ws.Cells["A1"].Style.Font.Size = 14;
         ws.Cells["A1"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
@@ -131,8 +150,16 @@ public class ReportGeneratorService : IReportGeneratorService
         using var package = new ExcelPackage();
         var ws = package.Workbook.Worksheets.Add("Existencias");
 
-        ws.Cells["A1"].Value = "REPORTE DE EXISTENCIAS DE INVENTARIO";
-        ws.Cells["A1:I1"].Merge = true;
+        var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "assets", "cluth.jpg");
+        if (File.Exists(logoPath))
+        {
+        var picture = ws.Drawings.AddPicture("Logo", logoPath);
+        picture.SetPosition(0, 5, 0, 5); // Fila 0, offset, Columna 0, offset
+        picture.SetSize(120, 120); 
+        }
+
+        ws.Cells["C1"].Value = "REPORTE DE EXISTENCIAS DE INVENTARIO";
+        ws.Cells["C1:I1"].Merge = true;
         ws.Cells["A1"].Style.Font.Bold = true;
         ws.Cells["A1"].Style.Font.Size = 14;
         ws.Cells["A1"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
@@ -201,13 +228,26 @@ public class ReportGeneratorService : IReportGeneratorService
                 page.Margin(30);
                 page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
 
-                page.Header().Column(col =>
-                {
-                    col.Item().AlignCenter().Text("KARDEX DE INVENTARIO").FontSize(16).Bold();
-                    col.Item().AlignCenter().Text($"Producto: {codigo} — {descripcion}").FontSize(11);
-                    col.Item().AlignCenter().Text($"Período: {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}").FontSize(9).FontColor("#86868b");
-                    col.Item().Height(10);
-                });
+               page.Header().Column(col =>
+{
+    col.Item().Row(row =>
+    {
+         if (File.Exists(LogoPath))
+            row.ConstantItem(80).Height(50).Image(LogoPath).FitArea();
+         else
+            row.ConstantItem(80).Height(50);
+
+         row.RelativeItem().Column(c =>
+         {
+            c.Item().AlignCenter().Text("KARDEX DE PRODUCTO").FontSize(16).Bold();
+            c.Item().AlignCenter().Text($"Producto: {codigo} — {descripcion}").FontSize(11);
+            c.Item().AlignCenter().Text($"Período: {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}").FontSize(9).FontColor("#86868b");
+         });
+
+            row.ConstantItem(80).Height(50); // balance visual derecho
+         });
+             col.Item().Height(10);
+            });
 
                 page.Content().Column(col =>
                 {
@@ -235,6 +275,7 @@ public class ReportGeneratorService : IReportGeneratorService
                         table.ColumnsDefinition(cols =>
                         {
                             cols.ConstantColumn(60);
+                            cols.ConstantColumn(60);
                             cols.RelativeColumn(3);
                             cols.ConstantColumn(65);
                             cols.RelativeColumn(4);
@@ -246,12 +287,13 @@ public class ReportGeneratorService : IReportGeneratorService
 
                         table.Header(h =>
                         {
-                            foreach (var t in new[] { "Fecha", "Documento", "Correlativo", "Cliente/Proveedor", "Entrada", "Salida", "Saldo", "Costo Unit." })
+                            foreach (var t in new[] { "Fecha", "Codigo", "Documento", "Correlativo", "Cliente/Proveedor", "Entrada", "Salida", "Saldo", "Costo Unit." })
                                 h.Cell().Background("#1d1d1f").Padding(5).Text(t).FontSize(8).Bold().FontColor("#ffffff");
                         });
 
                         // --- FILA DE SALDO INICIAL ---
                         table.Cell().Background("#f5f5f7").Padding(4).Text(desde.ToString("dd/MM/yy")).FontSize(8);
+                        table.Cell().Background("#f5f5f7").Padding(4).Text("").FontSize(8);
                         table.Cell().Background("#f5f5f7").Padding(4).Text("").FontSize(8);
                         table.Cell().Background("#f5f5f7").Padding(4).Text("").FontSize(8);
                         table.Cell().Background("#f5f5f7").Padding(4).Text("SALDO INICIAL ANTERIOR").FontSize(8).Bold();
@@ -260,7 +302,7 @@ public class ReportGeneratorService : IReportGeneratorService
                         table.Cell().Background("#f5f5f7").Padding(4).AlignRight().Text($"{saldoInicial:N2}").FontSize(8).Bold();
                         table.Cell().Background("#f5f5f7").Padding(4).Text("");
 
-                    double saldoRunning = saldoInicial;
+                        double saldoRunning = saldoInicial;
                         foreach (var item in data)
                         {
                             saldoRunning += item.Entrada - item.Salida;
@@ -268,6 +310,7 @@ public class ReportGeneratorService : IReportGeneratorService
                             IContainer Cell(IContainer c) => c.Background(bg).Padding(4);
 
                             table.Cell().Element(Cell).Text(item.Fecha.ToString("dd/MM/yy")).FontSize(8).FontColor("#555555");
+                            table.Cell().Element(Cell).Text(item.Codigo ?? "").FontSize(8).Bold().FontColor("#0071e3");
                             table.Cell().Element(Cell).Text(item.Documento ?? "").FontSize(8);
                             table.Cell().Element(Cell).Text(item.Correlativo ?? "").FontSize(8).Bold();
                             table.Cell().Element(Cell).Text(item.ClienteProveedor ?? "").FontSize(8);
@@ -277,16 +320,43 @@ public class ReportGeneratorService : IReportGeneratorService
                             table.Cell().Background(bg).Padding(4).AlignRight().Text(item.Costo > 0 ? $"${item.Costo:N2}" : "—").FontSize(8);
                         }
 
-                        IContainer TotalCell(IContainer c) => c.Background("#f5f5f7").Padding(5);
-                        table.Cell().ColumnSpan(4).Element(TotalCell).Text("TOTALES").FontSize(9).Bold();
-                        table.Cell().Element(TotalCell).AlignRight().Text($"+{totalEnt:N2}").FontSize(9).Bold().FontColor("#2e7d32");
-                        table.Cell().Element(TotalCell).AlignRight().Text($"-{totalSal:N2}").FontSize(9).Bold().FontColor("#c62828");
-                        table.Cell().Element(TotalCell).AlignRight().Text($"{saldoFin:N2}").FontSize(9).Bold();
-                        table.Cell().Element(TotalCell).Text("");
+                        IContainer TotalCell(IContainer c) => c.BorderTop(1).BorderColor("#1d1d1f").Background("#f5f5f7").Padding(5);
+                            // Ocupamos las primeras 5 columnas (Fecha, Codigo, Documento, Correlativo, Cliente)
+                            table.Cell().ColumnSpan(5).Element(TotalCell).Text("TOTALES").FontSize(9).Bold();
+
+                            //  Columna 6: Entrada
+                            table.Cell().Element(TotalCell).AlignRight().Text($"+{totalEnt:N2}").FontSize(9).Bold().FontColor("#2e7d32");
+
+                            //  Columna 7: Salida
+                            table.Cell().Element(TotalCell).AlignRight().Text($"-{totalSal:N2}").FontSize(9).Bold().FontColor("#c62828");
+
+                            // Columna 8: Saldo
+                            table.Cell().Element(TotalCell).AlignRight().Text($"{saldoFin:N2}").FontSize(9).Bold();
+
+                            // Columna 9: Costo Unit. (Celda vacía para completar la tabla)
+                            table.Cell().Element(TotalCell).Text("");
                     });
                 });
 
-                page.Footer().AlignRight().Text($"Generado el {DateTime.Now:dd/MM/yyyy HH:mm} · CloudPocket Reportería").FontSize(7).FontColor("#86868b");
+                  page.Footer().Column(col =>
+                {
+                    // Primera fila: Fecha y nombre del sistema
+                    col.Item().AlignRight()
+                        .Text($"Generado el {DateTime.Now:dd/MM/yyyy HH:mm} · CloudPocket Reportería")
+                        .FontSize(7).FontColor("#86868b");
+
+                    // Segunda fila: Numeración de páginas
+                    col.Item().AlignCenter().Text(x =>
+    {
+        // El formato se aplica individualmente o al objeto 'x'
+        x.DefaultTextStyle(s => s.FontSize(7).FontColor("#86868b")); 
+        
+        x.Span("Página ");
+        x.CurrentPageNumber();
+        x.Span(" de ");
+        x.TotalPages();
+    });
+                });
             });
         });
 
@@ -317,10 +387,23 @@ public class ReportGeneratorService : IReportGeneratorService
 
                 page.Header().Column(col =>
                 {
-                    col.Item().AlignCenter().Text("REPORTE DE EXISTENCIAS DE INVENTARIO").FontSize(16).Bold();
-                    col.Item().AlignCenter().Text($"Generado el {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor("#86868b");
-                    col.Item().Height(10);
-                });
+                col.Item().Row(row =>
+                {
+                 if (File.Exists(LogoPath))
+                 row.ConstantItem(80).Height(50).Image(LogoPath).FitArea();
+                 else
+                 row.ConstantItem(80).Height(50);
+
+                 row.RelativeItem().Column(c =>
+             {
+                c.Item().AlignCenter().Text("REPORTE DE EXISTENCIAS DE INVENTARIO").FontSize(16).Bold();
+             c.Item().AlignCenter().Text($"Generado el {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor("#86868b");
+             });
+
+             row.ConstantItem(80).Height(50); // balance visual derecho
+            });
+             col.Item().Height(10);
+                });;
 
                 page.Content().Column(col =>
                 {
@@ -385,7 +468,25 @@ public class ReportGeneratorService : IReportGeneratorService
                     });
                 });
 
-                page.Footer().AlignRight().Text($"Generado el {DateTime.Now:dd/MM/yyyy HH:mm} · CloudPocket Reportería").FontSize(7).FontColor("#86868b");
+                  page.Footer().Column(col =>
+                {
+                    // Primera fila: Fecha y nombre del sistema
+                    col.Item().AlignRight()
+                        .Text($"Generado el {DateTime.Now:dd/MM/yyyy HH:mm} · CloudPocket Reportería")
+                        .FontSize(7).FontColor("#86868b");
+
+                    // Segunda fila: Numeración de páginas
+                    col.Item().AlignCenter().Text(x =>
+    {
+        // El formato se aplica individualmente o al objeto 'x'
+        x.DefaultTextStyle(s => s.FontSize(7).FontColor("#86868b")); 
+        
+        x.Span("Página ");
+        x.CurrentPageNumber();
+        x.Span(" de ");
+        x.TotalPages();
+    });
+                });
             });
         });
 
@@ -399,106 +500,108 @@ public class ReportGeneratorService : IReportGeneratorService
     // Excel - Kardex General
     // -----------------------------------------
 
-  public byte[] ExcelKardexGeneral(List<KardexGeneralRow> data, DateTime desde, DateTime hasta)
-{
-    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-    using var package = new ExcelPackage();
-    var ws = package.Workbook.Worksheets.Add("Kardex General");
-
-    // Título y Período (Ajustado a J porque son 10 columnas: A-J)
-    ws.Cells["A1"].Value = "KARDEX GENERAL DE INVENTARIO";
-    ws.Cells["A1:J1"].Merge = true;
-    ws.Cells["A1"].Style.Font.Bold = true;
-    ws.Cells["A1"].Style.Font.Size = 14;
-    ws.Cells["A1"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-
-    ws.Cells["A2"].Value = $"Período: {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}";
-    ws.Cells["A2:J2"].Merge = true;
-    ws.Cells["A2"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-    ws.Cells["A2"].Style.Font.Color.SetColor(System.Drawing.Color.Gray);
-
-    // Encabezados (Ahora son 10)
-    var headers = new[] { "Fecha", "Código", "Descripción", "Documento", "Correlativo", "Cliente/Proveedor", "Entrada", "Salida", "Saldo Acumulado", "Costo Unit." };
-    for (int i = 0; i < headers.Length; i++)
+    public byte[] ExcelKardexGeneral(List<KardexGeneralRow> data, DateTime desde, DateTime hasta)
     {
-        var cell = ws.Cells[4, i + 1];
-        cell.Value = headers[i];
-        cell.Style.Font.Bold = true;
-        cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-        cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(29, 29, 31));
-        cell.Style.Font.Color.SetColor(System.Drawing.Color.White);
-        // Alineación a la derecha desde Entrada (col 7) hasta Costo (col 10)
-        cell.Style.HorizontalAlignment = i >= 6 ? ExcelHorizontalAlignment.Right : ExcelHorizontalAlignment.Left;
-    }
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        using var package = new ExcelPackage();
+        var ws = package.Workbook.Worksheets.Add("Kardex General");
 
-    int row = 5;
-    foreach (var item in data)
-    {
-        var bg = item.Entrada > 0
-            ? System.Drawing.Color.FromArgb(232, 245, 233)
-            : System.Drawing.Color.FromArgb(252, 228, 236);
-
-        ws.Cells[row, 1].Value = item.Fecha.ToString("dd/MM/yyyy");
-        ws.Cells[row, 2].Value = item.Codigo;
-        ws.Cells[row, 3].Value = item.Descripcion;
-        ws.Cells[row, 4].Value = item.Documento;
-        ws.Cells[row, 5].Value = item.Correlativo;
-        ws.Cells[row, 6].Value = item.ClienteProveedor;
-        ws.Cells[row, 7].Value = item.Entrada > 0 ? item.Entrada : (double?)null;
-        ws.Cells[row, 8].Value = item.Salida  > 0 ? item.Salida  : (double?)null;
         
-        // NUEVO: Saldo Acumulado en la columna 9
-        ws.Cells[row, 9].Value = item.SaldoAcumulado;
-        
-        // Costo Unitario se mueve a la columna 10
-        ws.Cells[row, 10].Value = item.Costo > 0 ? item.Costo : (double?)null;
 
-        // Estilo de fila (A-J es 1-10)
-        ws.Cells[row, 1, row, 10].Style.Fill.PatternType = ExcelFillStyle.Solid;
-        ws.Cells[row, 1, row, 10].Style.Fill.BackgroundColor.SetColor(bg);
+        // Título y Período (Ajustado a J porque son 10 columnas: A-J)
+        ws.Cells["A1"].Value = "KARDEX GENERAL DE INVENTARIO";
+        ws.Cells["A1:J1"].Merge = true;
+        ws.Cells["A1"].Style.Font.Bold = true;
+        ws.Cells["A1"].Style.Font.Size = 14;
+        ws.Cells["A1"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
-        // Colores de fuente para Entradas y Salidas
-        ws.Cells[row, 7].Style.Font.Color.SetColor(item.Entrada > 0 ? System.Drawing.Color.FromArgb(46, 125, 50) : System.Drawing.Color.Black);
-        ws.Cells[row, 8].Style.Font.Color.SetColor(item.Salida > 0 ? System.Drawing.Color.FromArgb(198, 40, 40) : System.Drawing.Color.Black);
-        
-        // Formato numérico para las últimas 4 columnas (7, 8, 9, 10)
+        ws.Cells["A2"].Value = $"Período: {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}";
+        ws.Cells["A2:J2"].Merge = true;
+        ws.Cells["A2"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+        ws.Cells["A2"].Style.Font.Color.SetColor(System.Drawing.Color.Gray);
+
+        // Encabezados (Ahora son 10)
+        var headers = new[] { "Fecha", "Código", "Descripción", "Documento", "Correlativo", "Cliente/Proveedor", "Entrada", "Salida", "Saldo Acumulado", "Costo Unit." };
+        for (int i = 0; i < headers.Length; i++)
+        {
+            var cell = ws.Cells[4, i + 1];
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(29, 29, 31));
+            cell.Style.Font.Color.SetColor(System.Drawing.Color.White);
+            // Alineación a la derecha desde Entrada (col 7) hasta Costo (col 10)
+            cell.Style.HorizontalAlignment = i >= 6 ? ExcelHorizontalAlignment.Right : ExcelHorizontalAlignment.Left;
+        }
+
+        int row = 5;
+        foreach (var item in data)
+        {
+            var bg = item.Entrada > 0
+                ? System.Drawing.Color.FromArgb(232, 245, 233)
+                : System.Drawing.Color.FromArgb(252, 228, 236);
+
+            ws.Cells[row, 1].Value = item.Fecha.ToString("dd/MM/yyyy");
+            ws.Cells[row, 2].Value = item.Codigo;
+            ws.Cells[row, 3].Value = item.Descripcion;
+            ws.Cells[row, 4].Value = item.Documento;
+            ws.Cells[row, 5].Value = item.Correlativo;
+            ws.Cells[row, 6].Value = item.ClienteProveedor;
+            ws.Cells[row, 7].Value = item.Entrada > 0 ? item.Entrada : (double?)null;
+            ws.Cells[row, 8].Value = item.Salida > 0 ? item.Salida : (double?)null;
+
+            // NUEVO: Saldo Acumulado en la columna 9
+            ws.Cells[row, 9].Value = item.SaldoAcumulado;
+
+            // Costo Unitario se mueve a la columna 10
+            ws.Cells[row, 10].Value = item.Costo > 0 ? item.Costo : (double?)null;
+
+            // Estilo de fila (A-J es 1-10)
+            ws.Cells[row, 1, row, 10].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            ws.Cells[row, 1, row, 10].Style.Fill.BackgroundColor.SetColor(bg);
+
+            // Colores de fuente para Entradas y Salidas
+            ws.Cells[row, 7].Style.Font.Color.SetColor(item.Entrada > 0 ? System.Drawing.Color.FromArgb(46, 125, 50) : System.Drawing.Color.Black);
+            ws.Cells[row, 8].Style.Font.Color.SetColor(item.Salida > 0 ? System.Drawing.Color.FromArgb(198, 40, 40) : System.Drawing.Color.Black);
+
+            // Formato numérico para las últimas 4 columnas (7, 8, 9, 10)
+            ws.Cells[row, 7, row, 10].Style.Numberformat.Format = "#,##0.00";
+            ws.Cells[row, 7, row, 10].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+
+            row++;
+        }
+
+        // Totales (Ajustado a columna 10)
+        ws.Cells[row, 1, row, 6].Merge = true;
+        ws.Cells[row, 1].Value = "TOTALES";
+        ws.Cells[row, 1].Style.Font.Bold = true;
+        ws.Cells[row, 7].Value = data.Sum(d => d.Entrada);
+        ws.Cells[row, 8].Value = data.Sum(d => d.Salida);
+
+        ws.Cells[row, 7, row, 10].Style.Font.Bold = true;
         ws.Cells[row, 7, row, 10].Style.Numberformat.Format = "#,##0.00";
-        ws.Cells[row, 7, row, 10].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
-        
-        row++;
+        ws.Cells[row, 1, row, 10].Style.Fill.PatternType = ExcelFillStyle.Solid;
+        ws.Cells[row, 1, row, 10].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(245, 245, 247));
+
+        // Ajuste de anchos final
+        ws.Column(1).Width = 12;
+        ws.Column(2).Width = 12;
+        ws.Column(3).Width = 40;
+        ws.Column(4).Width = 28;
+        ws.Column(5).Width = 14;
+        ws.Column(6).Width = 45; // Cliente
+        ws.Column(7).Width = 12;
+        ws.Column(8).Width = 12;
+        ws.Column(9).Width = 15; // Saldo Acumulado
+        ws.Column(10).Width = 12; // Costo
+                                  // Habilitar el ajuste de texto en las columnas con contenido largo
+        ws.Column(3).Style.WrapText = true; // Descripción
+        ws.Column(6).Style.WrapText = true; // Cliente/Proveedor
+
+        // Alinear todo al tope superior para que si una fila crece, el resto no se vea raro
+        ws.Cells[5, 1, row, 10].Style.VerticalAlignment = ExcelVerticalAlignment.Top;
+        return package.GetAsByteArray();
     }
-
-    // Totales (Ajustado a columna 10)
-    ws.Cells[row, 1, row, 6].Merge = true;
-    ws.Cells[row, 1].Value = "TOTALES";
-    ws.Cells[row, 1].Style.Font.Bold = true;
-    ws.Cells[row, 7].Value = data.Sum(d => d.Entrada);
-    ws.Cells[row, 8].Value = data.Sum(d => d.Salida);
-    
-    ws.Cells[row, 7, row, 10].Style.Font.Bold = true;
-    ws.Cells[row, 7, row, 10].Style.Numberformat.Format = "#,##0.00";
-    ws.Cells[row, 1, row, 10].Style.Fill.PatternType = ExcelFillStyle.Solid;
-    ws.Cells[row, 1, row, 10].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(245, 245, 247));
-
-    // Ajuste de anchos final
-    ws.Column(1).Width = 12; 
-    ws.Column(2).Width = 12; 
-    ws.Column(3).Width = 40;
-    ws.Column(4).Width = 28; 
-    ws.Column(5).Width = 14; 
-    ws.Column(6).Width = 45; // Cliente
-    ws.Column(7).Width = 12; 
-    ws.Column(8).Width = 12; 
-    ws.Column(9).Width = 15; // Saldo Acumulado
-    ws.Column(10).Width = 12; // Costo
-    // Habilitar el ajuste de texto en las columnas con contenido largo
-    ws.Column(3).Style.WrapText = true; // Descripción
-    ws.Column(6).Style.WrapText = true; // Cliente/Proveedor
-
-    // Alinear todo al tope superior para que si una fila crece, el resto no se vea raro
-    ws.Cells[5, 1, row, 10].Style.VerticalAlignment = ExcelVerticalAlignment.Top;
-    return package.GetAsByteArray();
-}
 
     // ------------------------------------------
     // PDF - Kardex General
@@ -519,12 +622,25 @@ public class ReportGeneratorService : IReportGeneratorService
                 page.DefaultTextStyle(x => x.FontSize(8).FontFamily("Arial"));
 
                 page.Header().Column(col =>
-                {
-                    col.Item().AlignCenter().Text("KARDEX GENERAL DE INVENTARIO").FontSize(16).Bold();
-                    col.Item().AlignCenter().Text($"Período: {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}")
-                        .FontSize(9).FontColor("#86868b");
-                    col.Item().Height(10);
-                });
+{
+    col.Item().Row(row =>
+    {
+        if (File.Exists(LogoPath))
+            row.ConstantItem(80).Height(50).Image(LogoPath).FitArea();
+        else
+            row.ConstantItem(80).Height(50);
+
+        row.RelativeItem().Column(c =>
+        {
+            c.Item().AlignCenter().Text("KARDEX GENERAL DE INVENTARIO").FontSize(16).Bold();
+            c.Item().AlignCenter().Text($"Período: {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}")
+                .FontSize(9).FontColor("#86868b");
+        });
+
+        row.ConstantItem(80).Height(50); // balance visual derecho
+    });
+    col.Item().Height(10);
+});
 
                 page.Content().Column(col =>
                 {
@@ -575,28 +691,28 @@ public class ReportGeneratorService : IReportGeneratorService
                             var bg = item.Entrada > 0 ? "#e8f5e9" : "#fce4ec";
                             IContainer Cell(IContainer c) => c.Background(bg).Padding(3);
 
-                                table.Cell().Element(Cell).Text(item.Fecha.ToString("dd/MM/yy")).FontSize(7).FontColor("#555");
-                                table.Cell().Element(Cell).Text(item.Codigo ?? "").FontSize(7).Bold().FontColor("#0071e3");
-                                table.Cell().Element(Cell).Text(item.Descripcion ?? "").FontSize(7);
-                                table.Cell().Element(Cell).Text(item.Documento ?? "").FontSize(7);
-                                table.Cell().Element(Cell).Text(item.Correlativo ?? "").FontSize(7).Bold();
-                                table.Cell().Element(Cell).Text(item.ClienteProveedor ?? "").FontSize(7);
-                                
-                                  // Entrada
-                                    table.Cell().Element(Cell).AlignRight()
-                                    .Text(item.Entrada > 0 ? $"+{item.Entrada:N2}" : "").FontSize(7).Bold().FontColor("#2e7d32");
-                                
-                                 // Salida
-                                 table.Cell().Element(Cell).AlignRight()
-                                    .Text(item.Salida > 0 ? $"-{item.Salida:N2}" : "").FontSize(7).Bold().FontColor("#c62828");
+                            table.Cell().Element(Cell).Text(item.Fecha.ToString("dd/MM/yy")).FontSize(7).FontColor("#555");
+                            table.Cell().Element(Cell).Text(item.Codigo ?? "").FontSize(7).Bold().FontColor("#0071e3");
+                            table.Cell().Element(Cell).Text(item.Descripcion ?? "").FontSize(7);
+                            table.Cell().Element(Cell).Text(item.Documento ?? "").FontSize(7);
+                            table.Cell().Element(Cell).Text(item.Correlativo ?? "").FontSize(7).Bold();
+                            table.Cell().Element(Cell).Text(item.ClienteProveedor ?? "").FontSize(7);
 
-                                    // --- COLUMNA DE SALDO ACUMULADO ---
-                                    table.Cell().Element(Cell).AlignRight()
-                                    .Text($"{item.SaldoAcumulado:N2}").FontSize(7).Bold();
+                            // Entrada
+                            table.Cell().Element(Cell).AlignRight()
+                            .Text(item.Entrada > 0 ? $"+{item.Entrada:N2}" : "").FontSize(7).Bold().FontColor("#2e7d32");
 
-                                  // Costo
-                                    table.Cell().Element(Cell).AlignRight()
-                                    .Text(item.Costo > 0 ? $"${item.Costo:N2}" : "—").FontSize(7);
+                            // Salida
+                            table.Cell().Element(Cell).AlignRight()
+                               .Text(item.Salida > 0 ? $"-{item.Salida:N2}" : "").FontSize(7).Bold().FontColor("#c62828");
+
+                            // --- COLUMNA DE SALDO ACUMULADO ---
+                            table.Cell().Element(Cell).AlignRight()
+                            .Text($"{item.SaldoAcumulado:N2}").FontSize(7).Bold();
+
+                            // Costo
+                            table.Cell().Element(Cell).AlignRight()
+                            .Text(item.Costo > 0 ? $"${item.Costo:N2}" : "—").FontSize(7);
                         }
 
                         IContainer TotalCell(IContainer c) => c.Background("#f5f5f7").Padding(5);
@@ -608,9 +724,26 @@ public class ReportGeneratorService : IReportGeneratorService
                     });
                 });
 
-                page.Footer().AlignRight()
-                    .Text($"Generado el {DateTime.Now:dd/MM/yyyy HH:mm} · CloudPocket Reportería")
-                    .FontSize(7).FontColor("#86868b");
+                page.Footer().Column(col =>
+                {
+                    // Primera fila: Fecha y nombre del sistema
+                    col.Item().AlignRight()
+                        .Text($"Generado el {DateTime.Now:dd/MM/yyyy HH:mm} · CloudPocket Reportería")
+                        .FontSize(7).FontColor("#86868b");
+
+                    // Segunda fila: Numeración de páginas
+                    col.Item().AlignCenter().Text(x =>
+    {
+        // El formato se aplica individualmente o al objeto 'x'
+        x.DefaultTextStyle(s => s.FontSize(7).FontColor("#86868b")); 
+        
+        x.Span("Página ");
+        x.CurrentPageNumber();
+        x.Span(" de ");
+        x.TotalPages();
+    });
+                });
+  
             });
         });
 
@@ -618,4 +751,215 @@ public class ReportGeneratorService : IReportGeneratorService
         pdf.GeneratePdf(ms);
         return ms.ToArray();
     }
+
+
+    // ------------------------------------------
+    // Excel -Producto-Stock
+    // -----------------------------------------
+  public byte[] ExcelProductoStock(List<ProductoDTO> data, string tituloFiltro)
+{
+    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+    using var package = new ExcelPackage();
+    var ws = package.Workbook.Worksheets.Add("Existencias de Inventario");
+
+    // Título y Fecha de Generación (7 columnas: A-G)
+    ws.Cells["A1"].Value = "REPORTE DE EXISTENCIAS DE INVENTARIO";
+    ws.Cells["A1:G1"].Merge = true;
+    ws.Cells["A1"].Style.Font.Bold = true;
+    ws.Cells["A1"].Style.Font.Size = 14;
+    ws.Cells["A1"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+    ws.Cells["A2"].Value = $"Fecha de generación: {DateTime.Now:dd/MM/yyyy HH:mm}";
+    ws.Cells["A2:G2"].Merge = true;
+    ws.Cells["A2"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+    ws.Cells["A2"].Style.Font.Color.SetColor(System.Drawing.Color.Gray);
+
+    ws.Cells["A3"].Value = tituloFiltro; 
+    ws.Cells["A3:G3"].Merge = true;
+    ws.Cells["A3"].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+    ws.Cells["A3"].Style.Font.Italic = true;
+    ws.Cells["A3"].Style.Font.Color.SetColor(System.Drawing.Color.SlateBlue);
+    
+    // Encabezados
+        var headers = new[] { "Código", "Descripción", "Categoría", "Unidad", "Stock Mín.", "Existencia", "Precio Venta" };
+    for (int i = 0; i < headers.Length; i++)
+    {
+        var cell = ws.Cells[5, i + 1];
+        cell.Value = headers[i];
+        cell.Style.Font.Bold = true;
+        cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(29, 29, 31)); 
+        cell.Style.Font.Color.SetColor(System.Drawing.Color.White);
+        // Alineación: Números a la derecha (cols 5, 6, 7)
+        //cell.Style.HorizontalAlignment = i >= 4 ? ExcelHorizontalAlignment.Right : ExcelHorizontalAlignment.Left;
+    }
+
+    int row = 6;
+    foreach (var item in data)
+    {
+        // Lógica de colores según stock
+        var isSinStock = (item.Existencia ?? 0) <= 0;
+        var isBajoMinimo = (item.StockMinimo > 0 && item.Existencia <= item.StockMinimo);
+
+        var bgColor = System.Drawing.Color.White;
+        if (isSinStock) bgColor = System.Drawing.Color.FromArgb(252, 228, 236); // Rojo tenue
+        else if (isBajoMinimo) bgColor = System.Drawing.Color.FromArgb(255, 248, 225); // Amarillo tenue
+
+        ws.Cells[row, 1].Value = item.Codigo;
+        ws.Cells[row, 2].Value = item.Descripcion;
+        ws.Cells[row, 3].Value = item.Categoria ?? "—";
+        ws.Cells[row, 4].Value = item.UnidadMedida ?? "—";
+        ws.Cells[row, 5].Value = item.StockMinimo ?? 0;
+        ws.Cells[row, 6].Value = item.Existencia ?? 0;
+        ws.Cells[row, 7].Value = item.PrecioVenta ?? 0;
+
+        // Aplicar color de fondo a la fila
+        ws.Cells[row, 1, row, 7].Style.Fill.PatternType = ExcelFillStyle.Solid;
+        ws.Cells[row, 1, row, 7].Style.Fill.BackgroundColor.SetColor(bgColor);
+
+        // Formatos numéricos
+        ws.Cells[row, 5, row, 6].Style.Numberformat.Format = "#,##0.00";
+        ws.Cells[row, 7].Style.Numberformat.Format = "$#,##0.00";
+        
+        ws.Cells[row, 5, row, 7].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+        row++;
+    }
+
+    // Ajuste de anchos
+    ws.Column(1).Width = 15; // Código
+    ws.Column(2).Width = 45; // Descripción
+    ws.Column(3).Width = 20; // Categoría
+    ws.Column(4).Width = 12; // Unidad
+    ws.Column(5).Width = 12; // Stock Min
+    ws.Column(6).Width = 12; // Existencia
+    ws.Column(7).Width = 15; // Precio
+
+    ws.Cells[5, 1, row, 7].Style.VerticalAlignment = ExcelVerticalAlignment.Top;
+    
+    return package.GetAsByteArray();
+}
+
+    // ------------------------------------------
+    // PDF -Producto-Stock
+    // -----------------------------------------
+    public byte[] PdfProductoStock(List<ProductoDTO> data, string tituloFiltro)
+{
+    QuestPDF.Settings.License = LicenseType.Community;
+
+    // Cálculos para KPIs
+    int totalProductos = data.Count;
+    decimal stockTotal = data.Sum(d => d.Existencia ?? 0);
+    int bajoMinimo = data.Count(d => d.StockMinimo > 0 && (d.Existencia ?? 0) <= d.StockMinimo && (d.Existencia ?? 0) > 0);
+    int sinStock = data.Count(d => (d.Existencia ?? 0) <= 0);
+
+    var pdf = Document.Create(container =>
+    {
+        container.Page(page =>
+        {
+            page.Size(PageSizes.A4); // Vertical es mejor para este reporte
+            page.Margin(30);
+            page.DefaultTextStyle(x => x.FontSize(8).FontFamily("Arial"));
+
+           page.Header().Column(col =>
+{
+    col.Item().Row(row =>
+    {
+        if (File.Exists(LogoPath))
+            row.ConstantItem(80).Height(50).Image(LogoPath).FitArea();
+        else
+            row.ConstantItem(80).Height(50);
+
+        row.RelativeItem().Column(c =>
+        {
+            c.Item().AlignCenter().Text("EXISTENCIAS DE INVENTARIO").FontSize(18).Bold().FontColor("#1d1d1f");
+            c.Item().AlignCenter().Text(tituloFiltro).FontSize(12).SemiBold().FontColor("#4a4a4a");
+            c.Item().AlignCenter().Text($"Generado el: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor("#86868b");
+        });
+
+        row.ConstantItem(80).Height(50);
+    });
+    col.Item().PaddingVertical(10).LineHorizontal(1).LineColor("#e0e0e0");
+}); 
+
+            page.Content().Column(col =>
+            {
+                // KPIs de resumen
+                col.Item().Row(row =>
+                {
+                    row.RelativeItem().Border(1).BorderColor("#eee").Padding(8).Column(c => {
+                        c.Item().Text("PRODUCTOS").FontSize(7).FontColor("#86868b");
+                        c.Item().Text($"{totalProductos}").FontSize(12).Bold();
+                    });
+                    row.ConstantItem(10);
+                    row.RelativeItem().Border(1).BorderColor("#eee").Padding(8).Column(c => {
+                        c.Item().Text("BAJO MÍNIMO").FontSize(7).FontColor("#86868b");
+                        c.Item().Text($"{bajoMinimo}").FontSize(12).Bold().FontColor("#f57f17");
+                    });
+                    row.ConstantItem(10);
+                    row.RelativeItem().Border(1).BorderColor("#eee").Padding(8).Column(c => {
+                        c.Item().Text("SIN STOCK").FontSize(7).FontColor("#86868b");
+                        c.Item().Text($"{sinStock}").FontSize(12).Bold().FontColor("#c62828");
+                    });
+                });
+
+                col.Item().Height(15);
+
+                // Tabla
+                col.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(cols =>
+                    {
+                        cols.ConstantColumn(80);  // Código
+                        cols.RelativeColumn(3);   // Descripción
+                        cols.RelativeColumn(1.5f);// Categoría
+                        cols.ConstantColumn(50);  // Unidad
+                        cols.ConstantColumn(60);  // Stock Min
+                        cols.ConstantColumn(60);  // Existencia
+                    });
+
+                    table.Header(h =>
+                    {
+                        foreach (var t in new[] { "Código", "Descripción", "Categoría", "Unidad", "Mínimo", "Stock" })
+                            h.Cell().Background("#1d1d1f").Padding(5).Text(t).Bold().FontColor("#fff");
+                    });
+
+                    foreach (var item in data)
+                    {
+                        var isSin = (item.Existencia ?? 0) <= 0;
+                        var isBajo = (item.StockMinimo > 0 && item.Existencia <= item.StockMinimo);
+                        
+                        // Color de fondo de la fila según estado
+                        string rowBg = "#ffffff";
+                        if (isSin) rowBg = "#fce4ec";
+                        else if (isBajo) rowBg = "#fff8e1";
+
+                        IContainer CellStyle(IContainer c) => c.Background(rowBg).BorderBottom(1).BorderColor("#f5f5f7").Padding(4).AlignMiddle();
+
+                        table.Cell().Element(CellStyle).Text(item.Codigo).Bold().FontColor("#0071e3");
+                        table.Cell().Element(CellStyle).Text(item.Descripcion);
+                        table.Cell().Element(CellStyle).Text(item.Categoria ?? "—").FontSize(7).FontColor("#666");
+                        table.Cell().Element(CellStyle).AlignCenter().Text(item.UnidadMedida ?? "—");
+                        table.Cell().Element(CellStyle).AlignRight().Text($"{item.StockMinimo:N2}");
+                        
+                        // Celda de Existencia con color si está mal
+                        var stockColor = isSin ? "#c62828" : (isBajo ? "#f57f17" : "#1d1d1f");
+                        table.Cell().Element(CellStyle).AlignRight().Text($"{item.Existencia:N2}").Bold().FontColor(stockColor);
+                    }
+                });
+            });
+
+            page.Footer().AlignCenter().Text(x => {
+                x.Span("Página ");
+                x.CurrentPageNumber();
+                x.Span(" de ");
+                x.TotalPages();
+            });
+        });
+    });
+
+    using var ms = new MemoryStream();
+    pdf.GeneratePdf(ms);
+    return ms.ToArray();
+}
+    
 } 

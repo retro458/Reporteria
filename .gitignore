@@ -16,6 +16,7 @@
 **/half
 **/dist
 **/deploy.ps1
+**/api
 # --- GENERAL ---
 .DS_Store
 *.log

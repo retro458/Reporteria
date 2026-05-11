@@ -64,6 +64,6 @@ const navItems = [
   { to: '/Existencias',      icon: IconChart, label: 'Existencias'      },
   { to: '/Kardex - General',  icon: IconGrid,   label: 'kardex-general'  },
   {to: '/dashboard', icon: IconChart, label: 'Dashboard' },
-
+  {to: '/Producto-Stock', icon: IconBox, label: 'Producto Stock' },
 ]
 </script>

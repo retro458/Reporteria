@@ -35,15 +35,16 @@ const auth = useAuthStore()
 const validando = ref(true)
 
 onMounted(() => {
-  // Simulamos un pequeño retraso para que la animación se vea bien
+  // 1. Si ya sabemos que está autenticado, saltamos el delay
+  if (auth.isAuthenticated) {
+    router.push('/Kardex - General')
+    return 
+  }
+
+  // 2. Si no, esperamos un poco para que la animación se luzca antes de mostrar el botón
   setTimeout(() => {
-    if (auth.isAuthenticated) {
-      router.push('/Kardex - General')
-    } else {
-      validando.value = false
-      // Opcional: si quieres que sea automático, podrías mandarlo al login de una
-      // router.push('/login')
-    }
-  }, 1200)
+    validando.value = false
+
+  }, 1000)
 })
 </script>

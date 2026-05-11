@@ -157,18 +157,27 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
+    authStore.setExpired(false)
+
     await authStore.login(
-      form.value.empresa,   // tenant: 'clutch'
+      form.value.empresa, //clutch
       form.value.usuario,
       form.value.password
     )
+
+    // Si el login fue exitoso, el navegador ya tiene la cookie "Authorization"
+    // y el store ya tiene el username y el rol.
     router.push('/')
 
   } catch (e: any) {
-    // El API devuelve 401 con { message: '...' }
-    error.value = e.response?.data?.message || 'Error al conectar con el servidor.'
+    // Manejo de errores específico del API de C#
+    if (e.response?.status === 401) {
+      error.value = 'Credenciales incorrectas. Revisa tu usuario o contraseña.'
+    } else {
+      error.value = e.response?.data?.message || 'Error de conexión con el servidor.'
+    }
+  } finally {
+    loading.value = false
   }
-
-  loading.value = false
 }
 </script>

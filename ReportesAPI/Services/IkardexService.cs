@@ -13,13 +13,21 @@ namespace ReportesAPI.Services;
 
 public interface IKardexService
 {
-    Task<KardexResult> ObtenerKardex(string codigo, DateTime desde, DateTime hasta); Task<List<KardexGeneralRow>> ObtenerKardexGeneral(DateTime desde, DateTime hasta, string? q = null);
+    Task<KardexResult> ObtenerKardex(string codigo, DateTime desde, DateTime hasta); Task<List<KardexGeneralRow>> ObtenerKardexGeneral(DateTime desde, DateTime hasta, string? q = null, string? tipoDocumento = null, string? sort= null);
 
     public record ExistenciaTotals(int Total, int EnStock, int BajoMinimo, int SinStock);
-    Task<(List<ExistenciaRow> Items, ExistenciaTotals Totales)> ObtenerExistencias(string? q = null, string? categoria = null, string? estado = null, int pagina = 1, int registrosPorPagina = 50);
+    Task<(List<ExistenciaRow> Items, ExistenciaTotals Totales)> ObtenerExistencias(string? q = null, string? categoria = null, string? estado = null, int pagina = 1, int registrosPorPagina = 50, string? descripcion = null);
 
-    Task<DashboardKPIs> ObtenerDashboardKPIs(DateTime desde, DateTime hasta);
+    //Task<DashboardKPIs> ObtenerDashboardKPIs(DateTime desde, DateTime hasta);
+    Task<DashboardDataDTO> ObtenerDashboardCompleto(DateTime desde, DateTime hasta);
 
+    //Task para obtener el stock de productos
+    /* Task<List<ProductoDTO>> ObtenerStockProductos(string codigos,   string Descripcion, string Categoria,  decimal Existencia,
+     decimal PrecioVenta,
+     decimal StockMinimo, 
+     string UnidadMedida);*/
+
+    Task<List<ProductoDTO>> ObtenerStockProductos();
 }
 
 public class KardexResult

@@ -1,49 +1,56 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const isLanding = import.meta.env.VITE_APP_MODE === 'landing'
-console.log('MODE:', import.meta.env.VITE_APP_MODE)
-console.log('isLanding:', isLanding)
 
-
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: isLanding
-    ? [
-        { path: '/', component: () => import('@/views/PaginaServicios.vue'), meta: { public: true } },
-        { path: '/:pathMatch(.*)*', redirect: '/' }
-      ]
-    : [
+const routes = isLanding
+  ? [
+      { path: '/', component: () => import('@/views/PaginaServicios.vue'), meta: { public: true } },
+      { path: '/:pathMatch(.*)*', redirect: '/' }
+    ]
+  : [
       { 
         path: '/', 
         name: 'welcome', 
         component: () => import('@/views/WelcomeView.vue'), 
-        meta: { public: true } // La hacemos pública para que App.vue la muestre
+        meta: { public: true } 
       },
-        { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue'), meta: { public: true } },
-        { path: '/Kardex - Por Producto', component: () => import('@/views/KardexView.vue'), meta: { requiresAuth: true } },
-        { path: '/Existencias', component: () => import('@/views/ExistenciasView.vue'), meta: { requiresAuth: true } },
-        { path: '/Kardex - General', component: () => import('@/views/KardexGeneral.vue'), meta: { requiresAuth: true } },
-        {path : '/dashboard', component: () => import('@/views/DashboardVista.vue'), meta: { requiresAuth: true }},
+      { 
+        path: '/login', 
+        name: 'login', 
+        component: () => import('@/views/LoginView.vue'), 
+        meta: { public: true } 
+      },
+      // Rutas Protegidas
+      { path: '/Kardex - Por Producto', component: () => import('@/views/KardexView.vue'), meta: { requiresAuth: true } },
+      { path: '/Existencias', component: () => import('@/views/ExistenciasView.vue'), meta: { requiresAuth: true } },
+      { path: '/Kardex - General', component: () => import('@/views/KardexGeneral.vue'), meta: { requiresAuth: true } },
+      { path: '/dashboard', component: () => import('@/views/DashboardVista.vue'), meta: { requiresAuth: true } },
+      {path: '/Producto-Stock', component: () => import('@/views/ProductoView.vue'), meta: { requiresAuth: true }},
+      
+      { path: '/:pathMatch(.*)*', redirect: '/' }
+    ]
 
-        {
-          path: '/session-expired',
-          name: 'session-expired',
-          component: () => import('@/views/SesionExpiradaView.vue'),
-          meta: { requiresAuth: false }
-        },
-      ]
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes
 })
 
 // Guard — va después del createRouter
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
+  const auth = useAuthStore() // Usamos el Store, no el localStorage directamente
 
-  if (to.meta.requiresAuth && !token) {
-    next('/login')        // Sin token → manda al login
-  } else if (to.path === '/login' && token) {
-    next('/')             // Ya logueado → no deja volver al login
-  } else {
-    next()                // Todo bien → continúa
+  // 1. Si la ruta requiere auth y el usuario NO está autenticado
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    next({ name: 'login' })
+  } 
+  // 2. Si intenta ir al login estando ya logueado
+  else if (to.name === 'login' && auth.isAuthenticated) {
+    next({ name: 'welcome' })
+  } 
+  // 3. En cualquier otro caso, dejar pasar
+  else {
+    next()
   }
 })
 

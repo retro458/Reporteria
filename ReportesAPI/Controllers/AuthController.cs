@@ -40,14 +40,14 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
-        // 1. Buscar empresa por subdominio
+        //  Buscar empresa por subdominio
         var empresa = await _admin.Empresas
             .FirstOrDefaultAsync(e => e.Subdominio == req.Tenant && e.Activa == true);
 
         if (empresa == null)
             return Unauthorized(new { message = "Empresa no encontrada" });
 
-        // 2. Buscar usuario
+        //  Buscar usuario
         var usuario = await _admin.Usuarios
             .FirstOrDefaultAsync(u =>
                 u.EmpresaId == empresa.EmpresaId &&
@@ -57,17 +57,33 @@ public class AuthController : ControllerBase
         if (usuario == null)
             return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
 
-        // 3. Verificar password 
-      if (!BCrypt.Net.BCrypt.Verify(req.Password, usuario.PasswordHash))
+        //  Verificar password 
+        if (!BCrypt.Net.BCrypt.Verify(req.Password, usuario.PasswordHash))
             return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
 
-        // 4. Generar JWT
+        // Generar JWT
         var token = GenerarToken(usuario.Username, empresa.Subdominio,
                                   empresa.DbName, usuario.Rol ?? string.Empty);
 
+        //   CONFIGURAR COOKIE HTTPONLY 
+        var isDev = _config["ASPNETCORE_ENVIRONMENT"] == "Development";
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true, // Cloudflare siempre usa HTTPS
+            SameSite = SameSiteMode.None, // Obligatorio para subdominios distintos
+            Expires = DateTime.UtcNow.AddHours(8),
+            Path = "/"
+        };
+
+        // Inyectamos la cookie en la respuesta
+        Response.Cookies.Append("Authorization", token, cookieOptions);
+
+        //  Devolvemos la respuesta SIN el token (el token ya va en la cookie)
         return Ok(new
         {
-            token,
+            // token = "", // Ya no es necesario enviarlo aquí
             username = usuario.Username,
             rol = usuario.Rol,
             empresa = empresa.Nombre,
@@ -75,7 +91,6 @@ public class AuthController : ControllerBase
             tenant = empresa.Subdominio
         });
     }
-
     private string GenerarToken(string username, string tenant,
                                   string dbName, string rol)
     {
@@ -101,6 +116,25 @@ public class AuthController : ControllerBase
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    [HttpPost("logout")]
+public IActionResult Logout()
+{
+    // Creamos opciones de cookie que coincidan exactamente con las del login
+    var cookieOptions = new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = true, 
+        SameSite = SameSiteMode.None,
+        Path = "/",
+        Expires = DateTime.UtcNow.AddDays(-1) //  Seteamos una fecha pasada para matarla
+    };
+
+    // Al hacer Append con una fecha pasada, el navegador la borra de inmediato
+    Response.Cookies.Append("Authorization", "", cookieOptions);
+
+    return Ok(new { message = "Sesión cerrada correctamente" });
+}
 }
 
 // ── DTO

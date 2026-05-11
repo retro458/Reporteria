@@ -111,11 +111,9 @@
           <div class="tabla-header-right">
             <span class="tabla-count">{{ productosFiltrados.length }} productos</span>
             <!-- Ordenar -->
-            <select v-model="ordenarPor" @change="ordenar" class="select-orden">
+            <select v-model="ordenarPor" @change="cargarDatos(1)" class="select-orden">
               <option value="descripcion">A-Z</option>
-              <option value="existencia_asc">Menor existencia</option>
-              <option value="existencia_desc">Mayor existencia</option>
-              <option value="categoria">Categoría</option>
+              <option value="codigo">Codigo(Alfabético)</option>
             </select>
           </div>
         </div>
@@ -270,9 +268,10 @@ onMounted(() => {
       params: { 
         q: busqueda.value || undefined,
         categoria: filtroCategoria.value || undefined,
-        estado: filtroEstado.value || undefined,
+        estado: filtroEstado.value || undefined, 
         pagina: pagina, 
-        size: registrosPorPagina.value 
+        size: registrosPorPagina.value,
+        sort: ordenarPor.value
       },
       headers: { Authorization: `Bearer ${auth.token}` }
     })
@@ -296,16 +295,24 @@ onMounted(() => {
   }
   
   const ordenar = () => {
-    const data = [...productosFiltrados.value]
-    if (ordenarPor.value === 'descripcion') {
-      data.sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || ''))
-    } else if (ordenarPor.value === 'existencia_asc') {
-      data.sort((a, b) => a.existencia - b.existencia)
-    } else if (ordenarPor.value === 'existencia_desc') {
-      data.sort((a, b) => b.existencia - a.existencia)
-    }
-    productosFiltrados.value = data
+  const data = [...productosFiltrados.value]
+  
+  if (ordenarPor.value === 'descripcion') {
+    data.sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || ''))
+  } 
+  //  -----------------------------------
+  else if (ordenarPor.value === 'codigo') {
+    data.sort((a, b) => (a.codigo || '').localeCompare((b.codigo || ''), undefined,{numeric: true, sensitivity: 'base'}))
   }
+  // ---------------------------------
+  else if (ordenarPor.value === 'existencia_asc') {
+    data.sort((a, b) => a.existencia - b.existencia)
+  } else if (ordenarPor.value === 'existencia_desc') {
+    data.sort((a, b) => b.existencia - a.existencia)
+  }
+  
+  productosFiltrados.value = data
+}
   
   // --- Helpers de Estilo ---
   const getRowClass = (p: any) => {
@@ -336,7 +343,7 @@ onMounted(() => {
   const exportarExcel = async () => {
   try {
     const res = await api.get('/api/kardex/existencias/excel', {
-      params: { q: busqueda.value || undefined },
+      params: { q: busqueda.value || undefined, categoria: filtroCategoria.value || undefined, estado: filtroEstado.value || undefined, sort: ordenarPor.value },
       headers: { Authorization: `Bearer ${auth.token}` },
       responseType: 'blob' // Importante para archivos
     })
@@ -351,7 +358,7 @@ onMounted(() => {
 const exportarPDF = async () => {
   try {
     const res = await api.get('/api/kardex/existencias/pdf', {
-      params: { q: busqueda.value || undefined },
+      params: { q: busqueda.value || undefined, categoria: filtroCategoria.value || undefined, estado: filtroEstado.value || undefined, sort: ordenarPor.value  },
       headers: { Authorization: `Bearer ${auth.token}` },
       responseType: 'blob'
     })

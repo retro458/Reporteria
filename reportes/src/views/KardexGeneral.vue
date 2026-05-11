@@ -3,72 +3,82 @@
 
     <!-- Header -->
     <div class="page-header">
-      <div class="header-left">
-        <div class="header-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/>
-          </svg>
-        </div>
-        <div>
-          <h1 class="page-title">Kardex General</h1>
-          <p class="page-sub">Todos los movimientos · {{ empresaNombre }}</p>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button class="btn-export excel" @click="exportarExcel" :disabled="!hayDatos">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
-          Excel
-        </button>
-        <button class="btn-export pdf" @click="exportarPDF" :disabled="!hayDatos">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          PDF
-        </button>
-      </div>
+  <div class="header-left">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/>
+      </svg>
     </div>
+    <div>
+      <h1 class="page-title">Kardex General</h1>
+      <p class="page-sub">Todos los movimientos · {{ empresaNombre }}</p>
+    </div>
+  </div>
+
+  <div class="header-actions">
+    <select v-model="ordenarPor" class="select-orden-header">
+    <option value="fecha_desc">📅 Mostrar lo más reciente primero</option>
+    <option value="fecha_asc">📅 Mostrar lo más antiguo primero</option>
+    
+    <option value="codigo_antiguo">🔢 Por Código (Antiguo → Reciente)</option>
+    <option value="codigo_reciente">🔢 Por Código (Reciente → Antiguo)</option>
+  </select>
+
+    <button class="btn-export excel" @click="exportarExcel" :disabled="!hayDatos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+      Excel
+    </button>
+    <button class="btn-export pdf" @click="exportarPDF" :disabled="!hayDatos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      PDF
+    </button>
+  </div>
+</div>
+
+<div v-if="hayDatos" class="tabla-card">
+  <div class="tabla-header">
+    <h3>Detalle de Movimientos</h3>
+    <span class="tabla-count">{{ kardexFiltrado.length }} registros</span>
+  </div>
+  </div>
 
     <!-- Filtros -->
     <div class="filtros-card">
-      <div class="filtros-grid">
-
-        <div class="filtro-group">
-          <label>Buscar producto</label>
-          <div class="search-wrap">
-            <input
-              v-model="busqueda"
-              type="text"
-              placeholder="Código o descripción..."
-              @input="ejecutarBusqueda"
-            />
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-          </div>
+  <div class="filtros-grid">
+    <div class="filtro-group">
+      <label>Buscar producto</label>
+      <div class="search-wrap">
+        <input v-model="busqueda" type="text" placeholder="Código o descripción..." @input="ejecutarBusqueda" />
         </div>
-
-        <div class="filtro-group">
-          <label>Desde</label>
-          <input type="date" v-model="filtros.desde" />
-        </div>
-
-        <div class="filtro-group">
-          <label>Hasta</label>
-          <input type="date" v-model="filtros.hasta" />
-        </div>
-
-        <div class="filtro-group filtro-action">
-          <button class="btn-buscar" @click="buscarKardex" :disabled="cargando">
-            <svg v-if="!cargando" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M12 2a10 10 0 0 1 10 10"/>
-            </svg>
-            {{ cargando ? 'Buscando...' : 'Buscar' }}
-          </button>
-        </div>
-
-      </div>
     </div>
+
+    <div class="filtro-group">
+      <label>Tipo Documento</label>
+      <select v-model="filtros.tipoDocumento" class="custom-select">
+        <option value="TODOS">TODOS</option>
+        <option value="FACTURA">FACTURA</option>
+        <option value="CREDITO">CRÉDITO FISCAL</option>
+        <option value="AJUSTE">AJUSTE DE INV</option>
+      </select>
+    </div>
+
+    <div class="filtro-group">
+      <label>Desde</label>
+      <input type="date" v-model="filtros.desde" />
+    </div>
+
+    <div class="filtro-group">
+      <label>Hasta</label>
+      <input type="date" v-model="filtros.hasta" />
+    </div>
+
+    <div class="filtro-group filtro-action">
+      <button class="btn-buscar" @click="buscarKardex" :disabled="cargando">
+          {{ cargando ? 'Cargando...' : 'Buscar' }}
+         </button>
+    </div>
+  </div>
+</div>
 
     <!-- KPIs -->
     <div v-if="hayDatos" class="kpis-row">
@@ -116,11 +126,7 @@
         <h3>Detalle de Movimientos</h3>
         <div class="tabla-header-right">
           <span class="tabla-count">{{ kardexData.length }} registros</span>
-          <select v-model="ordenarPor" @change="ordenar" class="select-orden">
-            <option value="fecha_desc">Más reciente</option>
-            <option value="fecha_asc">Más antiguo</option>
-            <option value="codigo">Por código</option>
-          </select>
+          
         </div>
       </div>
       <div class="tabla-scroll">
@@ -139,11 +145,15 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(row, i) in kardexData"
+              <tr
+             v-for="(row, i) in kardexFiltrado"
               :key="i"
-              :class="{ 'row-entrada': row.entrada > 0, 'row-salida': row.salida > 0 }"
-            >
+              :class="{ 
+             'row-entrada': row.entrada > 0 && row.documento !== 'AJUSTE INVENTARIO', 
+             'row-salida': row.salida > 0 && row.documento !== 'AJUSTE INVENTARIO',
+             'row-ajuste': row.documento === 'AJUSTE INVENTARIO'
+             }"
+             >
               <td class="fecha">{{ formatFecha(row.fecha) }}</td>
               <td class="codigo">{{ row.codigo }}</td>
               <td class="desc">{{ row.descripcion }}</td>
@@ -210,13 +220,66 @@ let debounceTimer: ReturnType<typeof setTimeout>
 
 const filtros = ref({
   desde: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
-  hasta: new Date().toISOString().split('T')[0]
+  hasta: new Date().toISOString().split('T')[0],
+  tipoDocumento: 'TODOS',
+  categoria: 'TODAS'
+
 })
 
-const hayDatos = computed(() => kardexData.value.length > 0)
+const hayDatos = computed(() => kardexOriginal.value.length > 0)
+
+const kardexFiltrado = computed(() => {
+  if (!kardexOriginal.value.length) return [];
+  
+  // Primero filtramos por Documento y Categoría
+  let resultado = kardexOriginal.value.filter(row => {
+    const docData = (row.documento || '').toUpperCase();
+    const fDoc = filtros.value.tipoDocumento;
+    const fCat = filtros.value.categoria;
+
+    const matchesDoc = fDoc === 'TODOS' || 
+                      (fDoc === 'FACTURA' && docData.includes('FACTURA')) ||
+                      (fDoc === 'CREDITO' && (docData.includes('CREDITO') || docData.includes('FISCAL'))) ||
+                      (fDoc === 'AJUSTE' && docData.includes('AJUSTE'));
+    
+    const matchesCat = fCat === 'TODOS' || fCat === 'TODAS' || row.categoria === fCat;
+
+    return matchesDoc && matchesCat;
+  });
+
+  //Luego ordenamos el resultado filtrado según el criterio seleccionado
+  const criterio = ordenarPor.value;
+  
+  return [...resultado].sort((a, b) => {
+    if (criterio === 'fecha_desc') {
+      return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+    } 
+    else if (criterio === 'fecha_asc') {
+      return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+    } 
+    else if (criterio === 'codigo_antiguo') { // <-- Nuevo criterio unificado
+      // Primero ordena por código (natural: CE1, CE2, CE10)
+      const compCodigo = (a.codigo || '').localeCompare((b.codigo || ''), undefined, { numeric: true });
+      
+      // Si el código es el mismo, ordena por fecha (el más viejo primero)
+      if (compCodigo === 0) {
+        return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+      }
+      return compCodigo;
+    }
+    else if (criterio === 'codigo_reciente') { // <-- Por si quiere código + lo más nuevo
+      const compCodigo = (a.codigo || '').localeCompare((b.codigo || ''), undefined, { numeric: true });
+      if (compCodigo === 0) {
+        return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+      }
+      return compCodigo;
+    }
+    return 0;
+  });
+});
 
 const resumen = computed(() => {
-  const data = kardexData.value
+  const data = kardexFiltrado.value
   return {
     totalEntradas:   data.reduce((s, r) => s + (r.entrada || 0), 0),
     totalSalidas:    data.reduce((s, r) => s + (r.salida  || 0), 0),
@@ -257,21 +320,25 @@ const ejecutarBusqueda = () => {
 }
 
 const ordenar = () => {
-  const data = [...kardexData.value]
+  const copia = [... kardexOriginal.value];
+  copia.sort((a, b) => {
   if (ordenarPor.value === 'fecha_desc') {
-    data.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+    return new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
   } else if (ordenarPor.value === 'fecha_asc') {
-    data.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+    return new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
   } else if (ordenarPor.value === 'codigo') {
-    data.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''))
+    return (a.codigo || '').localeCompare(b.codigo || '')
   }
-  kardexData.value = data
-}
+  return 0;
+});
+  kardexData.value = copia;
+};
 
 const exportarExcel = async () => {
   try {
     const res = await api.get('/api/kardex/general/excel', {
-      params: { desde: filtros.value.desde, hasta: filtros.value.hasta, q: busqueda.value || undefined },
+      params: { desde: filtros.value.desde, hasta: filtros.value.hasta, q: busqueda.value || undefined, tipoDocumento: filtros.value.tipoDocumento, 
+        sort: ordenarPor.value },
       headers: { Authorization: `Bearer ${auth.token}` },
       responseType: 'blob'
     })
@@ -286,7 +353,8 @@ const exportarExcel = async () => {
 const exportarPDF = async () => {
   try {
     const res = await api.get('/api/kardex/general/pdf', {
-      params: { desde: filtros.value.desde, hasta: filtros.value.hasta, q: busqueda.value || undefined },
+      params: { desde: filtros.value.desde, hasta: filtros.value.hasta, q: busqueda.value || undefined, tipoDocumento: filtros.value.tipoDocumento, 
+        sort: ordenarPor.value },
       headers: { Authorization: `Bearer ${auth.token}` },
       responseType: 'blob'
     })
@@ -343,9 +411,23 @@ const formatMoney = (n: number) => `$${(n || 0).toLocaleString('es-SV', { minimu
 }
 .filtros-grid {
   display: grid;
-  grid-template-columns: 1fr 160px 160px auto;
-  gap: 16px; align-items: end;
+  /* Ajustado para 5 columnas: Producto(ancho), Doc, Desde, Hasta, Botón */
+  grid-template-columns: 2fr 160px 150px 150px auto; 
+  gap: 16px; 
+  align-items: end;
 }
+
+.custom-select {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: rgba(0,0,0,0.03);
+  font-size: 13px;
+  color: #1d1d1f;
+  outline: none;
+  cursor: pointer;
+}
+
 .filtro-group { display: flex; flex-direction: column; gap: 6px; }
 .filtro-group label { font-size: 11px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; }
 .filtro-group input {
@@ -408,15 +490,30 @@ const formatMoney = (n: number) => `$${(n || 0).toLocaleString('es-SV', { minimu
 .tabla-header h3 { font-size: 14px; font-weight: 600; color: #1d1d1f; margin: 0; }
 .tabla-header-right { display: flex; align-items: center; gap: 10px; }
 .tabla-count { font-size: 12px; color: #86868b; background: #f5f5f7; padding: 3px 10px; border-radius: 20px; }
-.select-orden {
-  padding: 5px 10px; border-radius: 8px;
+.select-orden-header {
+  padding: 8px 12px;
+  border-radius: 10px;
   border: 1px solid rgba(0,0,0,0.1);
-  font-size: 12px; color: #1d1d1f;
-  background: #f5f5f7; outline: none; cursor: pointer;
+  background: white; /* Resalta sobre el fondo f5f5f7 */
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d1d1f;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.select-orden-header:hover {
+  border-color: rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
 }
 
 .tabla-scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  min-width: 1200px; /* Un poco más porque el General tiene la columna 'Código' */
+}
 thead tr { background: #f5f5f7; }
 th {
   padding: 10px 14px; text-align: left;
@@ -428,7 +525,10 @@ th.num { text-align: right; }
 td { padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.04); color: #1d1d1f; }
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
 td.fecha { color: #86868b; font-size: 12px; white-space: nowrap; }
-td.codigo { font-weight: 700; font-size: 12px; color: #0071e3; white-space: nowrap; }
+td.codigo {
+  font-family: 'SF Mono', 'Monaco', monospace; /* Tipo de letra técnico para códigos */
+  letter-spacing: -0.2px;
+}
 td.desc { font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 td.doc { font-size: 12px; color: #555; }
 td.corr { font-size: 12px; font-weight: 600; }
@@ -438,6 +538,27 @@ td.cliente { font-size: 12px; max-width: 180px; overflow: hidden; text-overflow:
 .salida-val  { color: #c62828; font-weight: 600; }
 .row-entrada { background: rgba(46,125,50,0.02); }
 .row-salida  { background: rgba(198,40,40,0.02); }
+.row-ajuste {background: rgba(0, 113, 227, 0.03);}
+
+td.doc:has(span.badge-ajuste) {
+  display: flex;
+  align-items: center;
+}
+.badge-ajuste {
+  background: #0071e3;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+
+td.cliente.ajuste-obs {
+  font-style: italic;
+  color: #86868b;
+}
 tr:hover td  { background: rgba(0,0,0,0.02); }
 
 tfoot .fila-totales td {
@@ -457,6 +578,10 @@ tfoot .fila-totales td {
 @media (max-width: 768px) {
   .filtros-grid { grid-template-columns: 1fr; }
   .kpis-row { grid-template-columns: repeat(2, 1fr); }
-  .header-actions { display: none; }
+  .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 }
 </style>

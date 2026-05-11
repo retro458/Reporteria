@@ -20,6 +20,9 @@ public interface IReportGeneratorService
     byte[] ExcelExistencias(List<ExistenciaRow> data);
     byte[] PdfExistencias(List<ExistenciaRow> data);
 
-   byte[] ExcelKardexGeneral(List<KardexGeneralRow> data, DateTime desde, DateTime hasta);
+    byte[] ExcelKardexGeneral(List<KardexGeneralRow> data, DateTime desde, DateTime hasta);
     byte[] PdfKardexGeneral(List<KardexGeneralRow> data, DateTime desde, DateTime hasta);
+
+    byte[] ExcelProductoStock(List<ProductoDTO> data, string tituloFiltro);
+    byte[] PdfProductoStock(List<ProductoDTO> data, string tituloFiltro);
 }

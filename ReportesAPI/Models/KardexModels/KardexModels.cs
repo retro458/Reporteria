@@ -11,6 +11,7 @@ namespace ReportesAPI.Models;
 public class KardexRow
 {
     public DateTime Fecha { get; set; }
+    public string Codigo { get; set; } = "";
     public string Documento { get; set; } = "";
     public string Correlativo { get; set; } = "";
     public string ClienteProveedor { get; set; } = "";
@@ -53,13 +54,16 @@ public class DashboardKPIs
 {
     public int TotalProductos { get; set; }
     public decimal InversionComprasPeriodo { get; set; }
-    public decimal ValorVentasPeriodo { get; set; }
+    public decimal VentasBrutas { get; set; }
+    public decimal VentasNetas { get; set; }
+    public decimal IVAAcumulado { get; set; }
 }
-
 public class VentaDiaria
 {
-    public DateTime Fecha { get; set; }
-    public double TotalDia { get; set; }
+  public DateTime Fecha { get; set; }
+    public double TotalBruto { get; set; }
+    public double TotalNeto { get; set; }
+    public double TotalIVA { get; set; }
 }
 
 public class DasboardResult
@@ -67,4 +71,30 @@ public class DasboardResult
     public DashboardKPIs KPIs { get; set; } = new();
     public List<KardexGeneralRow> TopNegativos { get; set; } = new();
     public List<VentaDiaria> GraficaVentas { get; set; } = new();
+}
+
+public class DashboardDataDTO
+{
+    public DashboardKPIs? Totales { get; set; }
+    public List<ProductoStockBajo>? TopFugas { get; set; }
+    public List<VentaDiaria>? DatosGrafica { get; set; }
+}
+
+public class ProductoStockBajo
+    {
+        public string? Codigo { get; set; }
+        public string? Descripcion { get; set; }
+        public decimal Existencia { get; set; }
+    }
+
+public class ProductoDTO
+{
+    public string? Codigo { get; set; }
+    public string? Descripcion { get; set; }
+    public string? Categoria { get; set; }
+    public decimal? Existencia { get; set; }
+    public decimal? PrecioVenta { get; set; }
+    public decimal? StockMinimo { get; set; }
+    public string? UnidadMedida{ get; set; }
+
 }

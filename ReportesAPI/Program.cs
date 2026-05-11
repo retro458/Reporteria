@@ -15,6 +15,10 @@ builder.Host.UseWindowsService();
 // Controladores
 builder.Services.AddControllers();
 
+//healthcheck
+builder.Services.AddHealthChecks();
+    
+
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -49,14 +53,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer           = true,
-            ValidateAudience         = true,
-            ValidateLifetime         = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer              = builder.Configuration["Jwt:Issuer"],
-            ValidAudience            = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey         = new SymmetricSecurityKey(
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
                                            Encoding.UTF8.GetBytes(jwtKey!))
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Buscamos la cookie llamada "Authorization"
+                var token = context.Request.Cookies["Authorization"];
+                if (!string.IsNullOrEmpty(token))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -69,11 +86,13 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "http://localhost:5173",       // Vue dev
-                "  " // Producción
+                "https://api.cloudpocket.online", // Producción
+                "https://clutch.cloudpocket.online"
               )
-              
+
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // Permite enviar cookies (para JWT en cookie)
     });
 });
 
@@ -89,17 +108,19 @@ try
     app.UseCors("AllowVue");         // CORS antes de Auth
     app.UseAuthentication();          // Primero Authentication
     app.UseAuthorization();           // Luego Authorization
-
+    app.MapHealthChecks("/health"); // Endpoint para health checks
        if (app.Environment.IsDevelopment())
-       /* app.UseSwagger();
-        app.UseSwaggerUI(c => 
         {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Reportes API V1");
-        // Esto asegura que al entrar a /swagger se vea la interfaz
-        c.RoutePrefix = "swagger"; 
-        });*/
+            /*app.UseSwagger();
+            app.UseSwaggerUI(c => 
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Reportes API V1");
+                // Esto asegura que al entrar a /swagger se vea la interfaz
+                c.RoutePrefix = "swagger"; 
+            });*/
+        }	
 
-    app.MapControllers();
+        app.MapControllers();
 
     app.Run();    
 
